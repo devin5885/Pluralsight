@@ -24,6 +24,16 @@ namespace SecuringAngularApps.STS
                 new ApiScope("projects-api", "Projects API")
             };
 
+        public static IEnumerable<ApiResource> ApiResources =>
+            new List<ApiResource>
+            {
+                new ApiResource("projects-api", "Projects API")
+                {
+                    Scopes = { "projects-api" }
+                }
+            };
+        
+
         public static IEnumerable<Client> Clients =>
             new List<Client>
             {
@@ -49,28 +59,6 @@ namespace SecuringAngularApps.STS
                         "projects-api"
                     },
                     AccessTokenLifetime = 600
-                },
-                new Client
-                {
-                    ClientId = "mvc",
-                    ClientName = "MVC Client",
-                    AllowedGrantTypes = GrantTypes.Hybrid,
-
-                    ClientSecrets =
-                    {
-                        new Secret("secret".Sha256())
-                    },
-
-                    RedirectUris           = { "http://localhost:4201/signin-oidc" },
-                    PostLogoutRedirectUris = { "http://localhost:4201/signout-callback-oidc" },
-
-                    AllowedScopes =
-                    {
-                        IdentityServerConstants.StandardScopes.OpenId,
-                        IdentityServerConstants.StandardScopes.Profile
-                    },
-                    AllowOfflineAccess = true
-
                 }
             };
     }

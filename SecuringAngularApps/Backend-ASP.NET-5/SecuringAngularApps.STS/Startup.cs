@@ -14,6 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using IdentityServer4.Services;
 using System;
+using SecuringAngularApps.STS.Quickstart.Account;
 
 namespace SecuringAngularApps.STS
 {
@@ -51,6 +52,7 @@ namespace SecuringAngularApps.STS
             });
 
             services.AddMvc();
+            services.AddTransient<IProfileService, CustomProfileService>();
 
 
             var builder = services.AddIdentityServer(options =>
@@ -65,8 +67,10 @@ namespace SecuringAngularApps.STS
             })
                 .AddInMemoryIdentityResources(Config.IdentityResources)
                 .AddInMemoryApiScopes(Config.ApiScopes)
+                .AddInMemoryApiResources(Config.ApiResources)
                 .AddInMemoryClients(Config.Clients)
-                .AddAspNetIdentity<ApplicationUser>();
+                .AddAspNetIdentity<ApplicationUser>()
+                .AddProfileService<CustomProfileService>();
 
             // not recommended for production - you need to store your key material somewhere secure
             builder.AddDeveloperSigningCredential();
