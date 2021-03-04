@@ -37,8 +37,8 @@ namespace SecuringAngularApps.API
                     .SetIsOriginAllowed(origin => origin == "http://localhost:4200")
                     .AllowCredentials();
                 });
-
             });
+
             //services.AddAuthentication("Bearer")
             //    .AddJwtBearer("Bearer", options =>
             //    {
@@ -53,7 +53,7 @@ namespace SecuringAngularApps.API
                            options.ApiName = "projects-api";
                            options.RequireHttpsMetadata = false;
                        });
-           services.AddMvc(config =>
+            services.AddMvc(config =>
             {
                 var policy = new AuthorizationPolicyBuilder()
                                  .RequireAuthenticatedUser()

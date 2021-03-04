@@ -30,11 +30,18 @@ namespace SecuringAngularApps.API.Controllers
         public IEnumerable<Project> GetProjects()
         {
             //var claims = (from c in User.Claims select new { c.Type, c.Value }).ToList();
-            //claims.ForEach(c => Console.WriteLine($"{c.Type}: {c.Value}"));
-            var userId = this.User.FindFirstValue(JwtClaimTypes.Subject);
-            List<int> userProjectIds = _context.UserPermissions.Where(up =>
-               up.ProjectId.HasValue && up.UserProfileId == userId).Select(up => up.ProjectId.Value).ToList();
-            return _context.Projects.Where(p => userProjectIds.Contains(p.Id));
+            //claims.ForEach(c => Console.WriteLine($"{c.Type}: {c.Value}"));
+            if (User.IsInRole("Admin"))
+            {
+                return _context.Projects;
+            }
+            else
+            {
+                var userId = this.User.FindFirstValue(JwtClaimTypes.Subject);
+                List<int> userProjectIds = _context.UserPermissions.Where(up =>
+                   up.ProjectId.HasValue && up.UserProfileId == userId).Select(up => up.ProjectId.Value).ToList();
+                return _context.Projects.Where(p => userProjectIds.Contains(p.Id));
+            }
         }
 
         // GET: api/Projects/5
@@ -45,8 +52,7 @@ namespace SecuringAngularApps.API.Controllers
             {
                 return BadRequest(ModelState);
             }
-
-            if (!await ProjectEditAccessCheck(id, false)) return Forbid();
+            if (!await ProjectEditAccessCheck(id, false) && !User.IsInRole("Admin")) return Forbid();
             var project = await _context.Projects
                 .Include("UserPermissions")
                 .Include("Milestones")
@@ -61,10 +67,12 @@ namespace SecuringAngularApps.API.Controllers
         }
 
         [HttpGet("{id}/Users")]
-        public IActionResult GetProjectUsers([FromRoute] int id)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetProjectUsers([FromRoute] int id)
         {
+            var perms = await _context.UserPermissions.Where(up => up.ProjectId == id).ToListAsync();
             var users = from u in _context.UserProfiles.Include("UserPermissions")
-                        join p in _context.UserPermissions.Where(up => up.ProjectId == id)
+                        join p in perms
                         on u.Id equals p.UserProfileId
                         where p.Value != "Admin"
                         select u;
@@ -79,13 +87,11 @@ namespace SecuringAngularApps.API.Controllers
             {
                 return BadRequest(ModelState);
             }
-
             if (id != project.Id)
             {
                 return BadRequest();
             }
-
-            if (!await ProjectEditAccessCheck(id, true)) return Forbid();
+            if (!await ProjectEditAccessCheck(id, true) && !User.IsInRole("Admin")) return Forbid();
             _context.Entry(project).State = EntityState.Modified;
 
             try
@@ -109,6 +115,7 @@ namespace SecuringAngularApps.API.Controllers
 
         // POST: api/Projects
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> PostProject([FromBody] Project project)
         {
             if (!ModelState.IsValid)
@@ -124,6 +131,7 @@ namespace SecuringAngularApps.API.Controllers
 
         // DELETE: api/Projects/5
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteProject([FromRoute] int id)
         {
             if (!ModelState.IsValid)
@@ -150,7 +158,7 @@ namespace SecuringAngularApps.API.Controllers
         {
             var item = await _context.Milestones.FirstOrDefaultAsync(m => m.Id == milestone.Id);
             if (item != null) return StatusCode(409);
-            if (!await MilestoneAccessCheck(milestone)) return Forbid();
+            if (!await MilestoneAccessCheck(milestone) && !User.IsInRole("Admin")) return Forbid();
             _context.Milestones.Add(milestone);
             await _context.SaveChangesAsync();
             return CreatedAtAction("GetProject", new { id = milestone.ProjectId }, milestone);
@@ -161,7 +169,7 @@ namespace SecuringAngularApps.API.Controllers
         {
             var item = await _context.Milestones.FirstOrDefaultAsync(m => m.Id == id);
             if (item == null) return NotFound();
-            if (!await MilestoneAccessCheck(item)) return Forbid();
+            if (!await MilestoneAccessCheck(item) && !User.IsInRole("Admin")) return Forbid();
             _context.Milestones.Remove(item);
             await _context.SaveChangesAsync();
             return Ok();
@@ -173,7 +181,7 @@ namespace SecuringAngularApps.API.Controllers
             if (milestone.Id != id) return BadRequest();
             var item = await _context.Milestones.FirstOrDefaultAsync(ms => ms.Id == id);
             if (item == null) return NotFound();
-            if (!await MilestoneAccessCheck(item)) return Forbid();
+            if (!await MilestoneAccessCheck(item) && !User.IsInRole("Admin")) return Forbid();
             item.MilestoneStatusId = milestone.MilestoneStatusId;
             item.Name = milestone.Name;
             await _context.SaveChangesAsync();
