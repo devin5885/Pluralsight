@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using IdentityServer4.AccessTokenValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -38,14 +39,21 @@ namespace SecuringAngularApps.API
                 });
 
             });
-            services.AddAuthentication("Bearer")
-                .AddJwtBearer("Bearer", options =>
-                {
-                    options.Authority = "https://localhost:4242";
-                    options.Audience = "projects-api";
-                    options.RequireHttpsMetadata = false;
-                });
-            services.AddMvc(config =>
+            //services.AddAuthentication("Bearer")
+            //    .AddJwtBearer("Bearer", options =>
+            //    {
+            //        options.Authority = "https://localhost:4242";
+            //        options.Audience = "projects-api";
+            //        options.RequireHttpsMetadata = false;
+            //    });
+            services.AddAuthentication(IdentityServerAuthenticationDefaults.AuthenticationScheme)
+                       .AddIdentityServerAuthentication(options =>
+                       {
+                           options.Authority = "https://localhost:4242";
+                           options.ApiName = "projects-api";
+                           options.RequireHttpsMetadata = false;
+                       });
+           services.AddMvc(config =>
             {
                 var policy = new AuthorizationPolicyBuilder()
                                  .RequireAuthenticatedUser()
