@@ -52,7 +52,7 @@ namespace SecuringAngularApps.API.Controllers
         }
 
         [HttpGet("{id}/Users")]
-        public async Task<IActionResult> GetProjectUsers([FromRoute] int id)
+        public IActionResult GetProjectUsers([FromRoute] int id)
         {
             var users = from u in _context.UserProfiles.Include("UserPermissions")
                         join p in _context.UserPermissions.Where(up => up.ProjectId == id)
