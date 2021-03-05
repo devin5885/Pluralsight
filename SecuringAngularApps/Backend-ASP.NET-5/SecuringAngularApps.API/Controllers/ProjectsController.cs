@@ -5,7 +5,6 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using IdentityModel;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SecuringAngularApps.API.Model;
@@ -22,6 +21,21 @@ namespace SecuringAngularApps.API.Controllers
         public ProjectsController(ProjectDbContext context)
         {
             _context = context;
+        }
+
+        [HttpGet("AuthContext")]
+        [Authorize()]
+        public IActionResult GetAuthContext()
+        {
+            var userId = this.User.FindFirstValue(JwtClaimTypes.Subject);
+            var profile = _context.UserProfiles.Include("UserPermissions").FirstOrDefault(u => u.Id == userId);
+            if (profile == null) return NotFound();
+            var context = new AuthContext
+            {
+                UserProfile = profile,
+                Claims = User.Claims.Select(c => new SimpleClaim { Type = c.Type, Value = c.Value }).ToList()
+            };
+            return Ok(context);
         }
 
         // GET: api/Projects
